@@ -1,1 +1,5 @@
+openpyxl==3.0.10
+pandas==1.5.3
+pymorphy2==0.9.1
 PyTelegramBotAPI==3.6.7
+scikit-learn==1.2.0

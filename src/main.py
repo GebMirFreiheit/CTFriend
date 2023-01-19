@@ -1,5 +1,7 @@
 import telebot
 import os
+from model_training import openai, text_cleaner
+from handler import get_response_from_table
 
 telebot.apihelper.ENABLE_MIDDLEWARE = True
 
@@ -18,25 +20,22 @@ def start_message(message):
 # Если пользователь что-то написал, ответим
 @bot.message_handler(func=lambda message: True)
 def get_text_messages(message):
-    query = message.text
+    text_clf = openai()
 
-    if 'крипто' in query:
-        answer = 'Материалы по криптографии:' \
-            ' \n https://kmb.cybber.ru/crypto/main.html \n Задания на' \
-            ' криптографию: \n https://cryptopals.com/'
-    elif 'xss' in query:
-        answer = 'Материалы по XSS:' \
-            ' \n https://portswigger.net/web-security/cross-site-scripting \n'\
-            ' Задания на XSS: \n http://xss.school.sibears.ru/easy/0'
+    query = text_cleaner(message.text)
+
+    scores = text_clf.predict_proba([query]).tolist()[0]
+    if max(scores) < 0.75:
+        resp = get_response_from_table('Fallback')
     else:
-        answer = 'Пока не знаю, как помочь, но могу посоветовать источники!' \
-            'http://itsecwiki.org/index.php/Заглавная_страница'
+        category = text_clf.predict([query])[0]
+        resp = get_response_from_table(category)
 
     # отправим ответ
-    bot.send_message(message.from_user.id, answer)
+    bot.send_message(message.from_user.id, resp)
 
     # выведем в консоль вопрос / ответа
-    print("Запрос:", query, " \n\t\tОтвет :", answer)
+    print("Запрос:", query, " \n\t\tОтвет :", resp)
 
 
 # Запустим обработку событий бота
